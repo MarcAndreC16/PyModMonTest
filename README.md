@@ -1,3 +1,10 @@
+# PyModMonTest
+Python Modbus Monitor for test
+
+Modification of PyModMon to add a new interface to follow the test of our PV-storage-system.
+These tests follows instruction from the BVES: Effizienzleitfaden für PV-Speichersysteme (Version 2.0.1)
+You can refind this file on: https://www.bves.de/technische-dokumente/
+
 # PyModMon
 Python Modbus Monitor
 
