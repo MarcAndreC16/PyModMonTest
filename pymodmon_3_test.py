@@ -1,5 +1,15 @@
 # coding=UTF-8
 
+## @package pymodmontest
+# Python Modbus Monitor Test 
+# a small program that uses the pymodbus package to retrieve and
+# display modbus slave data and test from PV-storage-system
+# requires: Python 3.7, pymodbus, docopt
+#
+# Date created: 2022-07-08
+# Author: MarcAndreC16
+
+##=====================pymodmon========begin1=============================================================
 ## @package pymodmon
 # Python Modbus Monitor
 # a small program that uses the pymodbus package to retrieve and
@@ -886,11 +896,25 @@ class Gui:
     def closeWindow(self):
         exit()
 
+##=====================pymodmon========end1=============================================================
+
+class DataPlus(Data):
+    def __init__(self):
+        Data.__init__(self)
+
+
+class GuiPlus(Gui):
+    def __init__(self,master):
+        Gui.__init__(self,master)
+        
+class InoutPlus(Inout):
+    pass
+
 ## create a data object
-data = Data()
+data = DataPlus()
 
 ## create an input output object
-inout = Inout()
+inout = InoutPlus()
 
 ## what to do on program exit
 atexit.register(inout.cleanOnExit)
@@ -906,7 +930,7 @@ if (arguments['--nogui'] == False):
     try: ## if the program was called from command line without parameters
         window = Tk()
         ## create window container
-        gui = Gui(window)
+        gui = GuiPlus(window)
         gui_active = 1
         if (arguments['--inifile'] != None):
             inout.checkImportFile()
@@ -921,6 +945,8 @@ if (arguments['--nogui'] == False):
             exit()
         ## else continue with command line execution
 
+
+##=====================pymodmon========begin2=============================================================
 ########     this section handles all command line logic    ##########################
 
 ## read the configuration file
@@ -977,3 +1003,5 @@ if (arguments['--single'] == True):
     inout.stopCommunication()
     print('single run')
     exit()
+
+##=====================pymodmon========end2=============================================================
