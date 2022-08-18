@@ -93,6 +93,9 @@ from threading import Timer
 ## enable file access
 import os
 
+## enable matricial calcule
+import numpy as np
+
 ## class for all data related things
 #
 class Data(object):
@@ -472,8 +475,8 @@ class Gui:
         self.settingsframe.grid(sticky = 'EW')
 
         ## frame for the controls for starting and stopping configuration
-        controlframe = Frame(self.settingscanvas,bd=1,relief='groove')
-        controlframe.grid(sticky = 'EW')
+        self.controlframe = Frame(self.settingscanvas,bd=1,relief='groove')
+        self.controlframe.grid(sticky = 'EW')
 
         ## create Menu
         menubar = Menu(master)
@@ -533,8 +536,8 @@ class Gui:
         #
 
         ## Button for starting communication and starting writing to logger file
-        self.commButton = Button(controlframe,text='▶ Start Communication',bg='lightblue', command=self.startCommunication)
-        self.commButton.grid(row=0,column=1,sticky='W') 
+        self.commButton = Button(self.controlframe,text='▶ Start Communication',bg='lightblue', command=self.startCommunication)
+        self.commButton.grid(row=0,column=0,sticky='W') 
 
         ## fields for configuring the data connection
         #
@@ -901,12 +904,164 @@ class Gui:
 class DataPlus(Data):
     def __init__(self):
         Data.__init__(self)
-
-
+    
 class GuiPlus(Gui):
     def __init__(self,master):
         Gui.__init__(self,master)
+
+        ## Button for starting test batterie and starting writing to logger file
+        self.testButton = Button(self.controlframe,text=' Open Test Monitor',bg='lightblue', command=(self.startTestMonitor)) #create and add command test
+        self.testButton.grid(row=0,column=1,sticky='E')  
+
+        ## Button for changing view
+        self.controlframe.columnconfigure(1, weight=3)
+    
+    ## function for starting test and changing button function and text and  frame view
+    #
+    def startTestMonitor(self):
+        # # verify communication ok or force communication on????
+        # # inout.runCommunication()
+        # self.testButton.configure(text='⏹ Stop Testing Batterie',bg='red', command=(self.stopTestingBatterie))
+        # self.frameBatterieTestButton.configure(text='View Batterie Test',bg='lightgreen')
+        # self.frameTargetDataSelectButton.configure(text='View Target Data',bg='light grey')
+        # self.selectViewTest()
+        slave = Toplevel()
         
+        ## create Menu of the test monitor
+        menubar1 = Menu(slave)
+        filemenu1 = Menu(menubar1, tearoff=0)
+        filemenu1.add_command(label='Save Result',command='') # create function to save result of the test 
+        # filemenu1.add_command(label='Exit',command=self.closeWindow) create a new function to close only the test monitor (before closing verify that no test are running)
+        
+        menubar1.add_cascade(label='File', menu=filemenu1)
+        slave.config(menu=menubar1)
+        
+        ## configure second window for test monotoring
+        slave.title('Python Modbus Test Monitor')
+        slave.minsize(width=600, height=650)
+        notebook = ttk.Notebook(slave) # to have all result in one window
+        notebook.pack(pady=10,fill='both',expand=True)
+        slaveframe1 = ttk.Frame(notebook)
+        slaveframe2 = ttk.Frame(notebook)
+
+        slaveframe1.pack(fill='both',expand=True)
+        slaveframe2.pack(fill='both', expand=True)
+        notebook.add(slaveframe1, text='Batterie Test')
+        notebook.add(slaveframe2, text='PV test')
+
+        settingscanvas1 = Canvas(slaveframe1,bg="yellow",highlightthickness=0)
+        settingscanvas1.pack(side='top',expand=False,fill='none')
+
+        Label(slaveframe1, text='General test setup',anchor='w', font='-weight bold').pack(fill='x')
+        configcanvas1 = Canvas(slaveframe1,highlightthickness=0)
+        configcanvas1.pack(side='top',expand=False,fill='both')
+
+        Label(slaveframe1, text='Measure description',anchor='w', font='-weight bold').pack(fill='x')
+        descriptioncanvas1 = Canvas(slaveframe1,highlightthickness=0)
+        descriptioncanvas1.pack(side='top',expand=False,fill='both')
+
+        Label(slaveframe1, text='Battery performance measurement results',anchor='w', font='-weight bold').pack(fill='x')
+        self.resultcanvas1 = Canvas(slaveframe1,highlightthickness=0)
+        self.resultcanvas1.pack(side='top',expand=False,fill='both')
+
+        # add the button to start test
+        self.BatterieTestButton = Button(settingscanvas1,text='▶ Start Batterie Test',bg='lightblue',command= self.startTestingBatterie)
+        self.BatterieTestButton.pack()
+
+        ##Add widget on the config test Frame
+        # config table27
+        Label(configcanvas1, text='Parameter',width=15, relief='ridge',bg='dark grey').grid(row=0,column=0)
+        Label(configcanvas1, text='Batterie State',width=15, relief='ridge').grid(row=1,column=0)
+        Label(configcanvas1, text='Ta',width=15, relief='ridge').grid(row=2,column=0)
+        Label(configcanvas1, text='Value',width=20, relief='ridge',bg='dark grey').grid(row=0,column=1)
+        Label(configcanvas1, text='Start with SOCmax',width=20, relief='ridge').grid(row=1,column=1)
+        Label(configcanvas1, text='25°C +-5°C',width=20, relief='ridge').grid(row=2,column=1)
+
+        ##Add widget on the decription measure Frame
+        #description table28
+        Label(descriptioncanvas1, text='Discharge power',width=20, relief='ridge',bg='dark grey').grid(row=1,column=0)
+        Label(descriptioncanvas1, text='Charge power',width=20, relief='ridge',bg='dark grey').grid(row=2,column=0)
+        Label(descriptioncanvas1, text='Iteration',width=20, relief='ridge',bg='dark grey').grid(row=3,column=0)
+
+        Label(descriptioncanvas1, text='Cycle 1',width=15, relief='ridge',bg='dark grey').grid(row=0,column=1)
+        Label(descriptioncanvas1, text='Cycle 2',width=15, relief='ridge',bg='dark grey').grid(row=0,column=2)
+        Label(descriptioncanvas1, text='Cycle 3',width=15, relief='ridge',bg='dark grey').grid(row=0,column=3)
+
+        Label(descriptioncanvas1, text='Pbat2ac,nom',width=15, relief='ridge').grid(row=1,column=1)
+        Label(descriptioncanvas1, text='0,5.Pbat2ac,nom',width=15, relief='ridge').grid(row=1,column=2)
+        Label(descriptioncanvas1, text='0,25.Pbat2ac,nom',width=15, relief='ridge').grid(row=1,column=3)
+        Label(descriptioncanvas1, text='Ppv2bat,nom',width=15, relief='ridge').grid(row=2,column=1)
+        Label(descriptioncanvas1, text='0,5.Ppv2bat,nom',width=15, relief='ridge').grid(row=2,column=2)
+        Label(descriptioncanvas1, text='0,25.Ppv2bat,nom',width=15, relief='ridge').grid(row=2,column=3)
+        Label(descriptioncanvas1, text='3',width=15, relief='ridge').grid(row=3,column=1)
+        Label(descriptioncanvas1, text='3',width=15, relief='ridge').grid(row=3,column=2)
+        Label(descriptioncanvas1, text='3',width=15, relief='ridge').grid(row=3,column=3)
+        
+        ##Add widget on the Batterie test Frame
+        # Result table29
+        # Label(self.resultcanvas1, text='',width=20, relief='ridge',bg='dark grey').grid(columnspan=2,rowspan=2,row=1,column=0)
+        Label(self.resultcanvas1, text='Cycle',width=43, relief='ridge',bg='dark grey').grid(columnspan=9,row=1,column=2)
+        Label(self.resultcanvas1, text='Mean Value',width=19, relief='ridge',bg='dark grey').grid(columnspan=4,row=1,column=11)
+
+        Label(self.resultcanvas1, text='1.1',width=4, relief='ridge',bg='dark grey').grid(row=2,column=2)
+        Label(self.resultcanvas1, text='1.2',width=4, relief='ridge',bg='dark grey').grid(row=2,column=3)
+        Label(self.resultcanvas1, text='1.3',width=4, relief='ridge',bg='dark grey').grid(row=2,column=4)
+        Label(self.resultcanvas1, text='2.1',width=4, relief='ridge',bg='dark grey').grid(row=2,column=5)
+        Label(self.resultcanvas1, text='2.2',width=4, relief='ridge',bg='dark grey').grid(row=2,column=6)
+        Label(self.resultcanvas1, text='2.3',width=4, relief='ridge',bg='dark grey').grid(row=2,column=7)
+        Label(self.resultcanvas1, text='3.1',width=4, relief='ridge',bg='dark grey').grid(row=2,column=8)
+        Label(self.resultcanvas1, text='3.2',width=4, relief='ridge',bg='dark grey').grid(row=2,column=9)
+        Label(self.resultcanvas1, text='3.3',width=4, relief='ridge',bg='dark grey').grid(row=2,column=10)
+        Label(self.resultcanvas1, text='1  ',width=4, relief='ridge',bg='dark grey').grid(row=2,column=11)
+        Label(self.resultcanvas1, text='2  ',width=4, relief='ridge',bg='dark grey').grid(row=2,column=12)
+        Label(self.resultcanvas1, text='3  ',width=4, relief='ridge',bg='dark grey').grid(row=2,column=13)
+        Label(self.resultcanvas1, text='1-3',width=4, relief='ridge',bg='dark grey').grid(row=2,column=14)
+
+        Label(self.resultcanvas1, text=u'\u03b7 BAT,RTE',width=18, relief='ridge',bg='dark grey').grid(row=3,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'\u03b7 BAT,RTE (Coulomb)',width=18, relief='ridge',bg='dark grey').grid(row=4,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'P\u0305 BAT (Charge)',width=18, relief='ridge',bg='dark grey').grid(row=5,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'P\u0305 BAT (Discharge)',width=18, relief='ridge',bg='dark grey').grid(row=6,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u't(Charge)',width=18, relief='ridge',bg='dark grey').grid(row=7,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u't(Discharge)',width=18, relief='ridge',bg='dark grey').grid(row=8,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'E BAT (Charge)',width=18, relief='ridge',bg='dark grey').grid(row=9,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'E BAT (Discharge)',width=18, relief='ridge',bg='dark grey').grid(row=10,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'C BAT (Charge)',width=18, relief='ridge',bg='dark grey').grid(row=11,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'C BAT (Discharge)',width=18, relief='ridge',bg='dark grey').grid(row=12,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'max(U BAT)',width=18, relief='ridge',bg='dark grey').grid(row=13,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'min(U BAT)',width=18, relief='ridge',bg='dark grey').grid(row=14,column=0,sticky='w')
+
+        Label(self.resultcanvas1, text='%',width=3, relief='ridge',bg='dark grey').grid(row=3,column=1)
+        Label(self.resultcanvas1, text='%',width=3, relief='ridge',bg='dark grey').grid(row=4,column=1)
+        Label(self.resultcanvas1, text='W',width=3, relief='ridge',bg='dark grey').grid(row=5,column=1)
+        Label(self.resultcanvas1, text='W',width=3, relief='ridge',bg='dark grey').grid(row=6,column=1)
+        Label(self.resultcanvas1, text='s',width=3, relief='ridge',bg='dark grey').grid(row=7,column=1)
+        Label(self.resultcanvas1, text='s',width=3, relief='ridge',bg='dark grey').grid(row=8,column=1)
+        Label(self.resultcanvas1, text='Wh',width=3, relief='ridge',bg='dark grey').grid(row=9,column=1)
+        Label(self.resultcanvas1, text='Wh',width=3, relief='ridge',bg='dark grey').grid(row=10,column=1)
+        Label(self.resultcanvas1, text='Ah',width=3, relief='ridge',bg='dark grey').grid(row=11,column=1)
+        Label(self.resultcanvas1, text='Ah',width=3, relief='ridge',bg='dark grey').grid(row=12,column=1)
+        Label(self.resultcanvas1, text='V',width=3, relief='ridge',bg='dark grey').grid(row=13,column=1)
+        Label(self.resultcanvas1, text='V',width=3, relief='ridge',bg='dark grey').grid(row=14,column=1)
+    
+    # def display(self,texte,line,col):
+    #     Label(self.resultcanvas1, text=texte,width=4, relief='ridge').grid(row=line+3,column=col+2)
+
+    def startTestingBatterie(self):
+        self.BatterieTestButton.configure(text='⏹ Stop Testing Batterie',bg='red', command=(self.stopTestingBatterie))
+        # # try to do dynamic display
+        # results = np.zeros((12,13))
+        # [nline,ncolumn] = np.shape(results)
+        # for j in range(ncolumn):
+        #     for i in range(nline):
+        #         # E = Timer(1,lambda: self.display('oui',i,j))
+        #         # E.start()
+        #         Label(self.resultcanvas1, text='oui',width=4, relief='ridge').grid(row=i+3,column=j+2)
+        #         time.sleep(1)
+    
+    def stopTestingBatterie(self):
+        # inout.stopTestingBatterie()
+        self.BatterieTestButton.configure(text='▶ Start Testing Batterie',bg='lightblue', command=(self.startTestingBatterie))
+
 class InoutPlus(Inout):
     pass
 
@@ -925,6 +1080,7 @@ gui_active = 0
 if (arguments['--nogui'] == False):
     ## load graphical interface library
     from tkinter import *
+    from tkinter import ttk
     from tkinter import messagebox
     from tkinter import filedialog
     try: ## if the program was called from command line without parameters
