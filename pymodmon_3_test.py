@@ -89,6 +89,7 @@ import atexit
 
 ## enable timed execution of the data polling
 from threading import Timer
+import time
 
 ## enable file access
 import os
@@ -1056,7 +1057,7 @@ class GuiPlus(Gui):
         #         # E = Timer(1,lambda: self.display('oui',i,j))
         #         # E.start()
         #         Label(self.resultcanvas1, text='oui',width=4, relief='ridge').grid(row=i+3,column=j+2)
-        #         time.sleep(1)
+        #     after(1000,None)
     
     def stopTestingBatterie(self):
         # inout.stopTestingBatterie()
