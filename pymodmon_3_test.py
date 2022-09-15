@@ -97,6 +97,9 @@ import os
 ## enable matricial calcule
 import numpy as np
 
+##
+from Control.control_ESS import execute
+
 ## class for all data related things
 #
 class Data(object):
@@ -942,27 +945,27 @@ class GuiPlus(Gui):
         slave.minsize(width=600, height=650)
         notebook = ttk.Notebook(slave) # to have all result in one window
         notebook.pack(pady=10,fill='both',expand=True)
-        slaveframe1 = ttk.Frame(notebook)
+        self.slaveframe1 = ttk.Frame(notebook)
         slaveframe2 = ttk.Frame(notebook)
 
-        slaveframe1.pack(fill='both',expand=True)
+        self.slaveframe1.pack(fill='both',expand=True)
         slaveframe2.pack(fill='both', expand=True)
-        notebook.add(slaveframe1, text='Batterie Test')
+        notebook.add(self.slaveframe1, text='Batterie Test')
         notebook.add(slaveframe2, text='PV test')
 
-        settingscanvas1 = Canvas(slaveframe1,bg="yellow",highlightthickness=0)
+        settingscanvas1 = Canvas(self.slaveframe1,bg="yellow",highlightthickness=0)
         settingscanvas1.pack(side='top',expand=False,fill='none')
 
-        Label(slaveframe1, text='General test setup',anchor='w', font='-weight bold').pack(fill='x')
-        configcanvas1 = Canvas(slaveframe1,highlightthickness=0)
+        Label(self.slaveframe1, text='General test setup',anchor='w', font='-weight bold').pack(fill='x')
+        configcanvas1 = Canvas(self.slaveframe1,highlightthickness=0)
         configcanvas1.pack(side='top',expand=False,fill='both')
 
-        Label(slaveframe1, text='Measure description',anchor='w', font='-weight bold').pack(fill='x')
-        descriptioncanvas1 = Canvas(slaveframe1,highlightthickness=0)
+        Label(self.slaveframe1, text='Measure description',anchor='w', font='-weight bold').pack(fill='x')
+        descriptioncanvas1 = Canvas(self.slaveframe1,highlightthickness=0)
         descriptioncanvas1.pack(side='top',expand=False,fill='both')
 
-        Label(slaveframe1, text='Battery performance measurement results',anchor='w', font='-weight bold').pack(fill='x')
-        self.resultcanvas1 = Canvas(slaveframe1,highlightthickness=0)
+        Label(self.slaveframe1, text='Battery performance measurement results',anchor='w', font='-weight bold').pack(fill='x')
+        self.resultcanvas1 = Canvas(self.slaveframe1,highlightthickness=0)
         self.resultcanvas1.pack(side='top',expand=False,fill='both')
 
         # add the button to start test
@@ -1058,7 +1061,8 @@ class GuiPlus(Gui):
         #         # E.start()
         #         Label(self.resultcanvas1, text='oui',width=4, relief='ridge').grid(row=i+3,column=j+2)
         #     after(1000,None)
-    
+        execute(self.resultcanvas1,"la fonction principale s'execute",self.slaveframe1)
+        
     def stopTestingBatterie(self):
         # inout.stopTestingBatterie()
         self.BatterieTestButton.configure(text='▶ Start Testing Batterie',bg='lightblue', command=(self.startTestingBatterie))
