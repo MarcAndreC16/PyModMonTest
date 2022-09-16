@@ -98,7 +98,7 @@ import os
 import numpy as np
 
 ##
-from Control.control_ESS import execute
+from Control.SchedPacks.RunSchedule2 import *
 
 ## class for all data related things
 #
@@ -1061,7 +1061,7 @@ class GuiPlus(Gui):
         #         # E.start()
         #         Label(self.resultcanvas1, text='oui',width=4, relief='ridge').grid(row=i+3,column=j+2)
         #     after(1000,None)
-        execute(self.resultcanvas1,"la fonction principale s'execute",self.slaveframe1)
+        main(0) #Argument=1 d=for test batterie with ScheduleA
         
     def stopTestingBatterie(self):
         # inout.stopTestingBatterie()
