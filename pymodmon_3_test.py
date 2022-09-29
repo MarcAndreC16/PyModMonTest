@@ -986,6 +986,7 @@ class GuiPlus(Gui):
         Label(descriptioncanvas1, text='Discharge power',width=20, relief='ridge',bg='dark grey').grid(row=1,column=0)
         Label(descriptioncanvas1, text='Charge power',width=20, relief='ridge',bg='dark grey').grid(row=2,column=0)
         Label(descriptioncanvas1, text='Iteration',width=20, relief='ridge',bg='dark grey').grid(row=3,column=0)
+        Label(descriptioncanvas1, text='Select Schedule',width=20, relief='ridge',bg='dark grey').grid(row=4,column=0)
 
         Label(descriptioncanvas1, text='Cycle 1',width=15, relief='ridge',bg='dark grey').grid(row=0,column=1)
         Label(descriptioncanvas1, text='Cycle 2',width=15, relief='ridge',bg='dark grey').grid(row=0,column=2)
@@ -1001,6 +1002,22 @@ class GuiPlus(Gui):
         Label(descriptioncanvas1, text='3',width=15, relief='ridge').grid(row=3,column=2)
         Label(descriptioncanvas1, text='3',width=15, relief='ridge').grid(row=3,column=3)
         
+        #to select wich schedule to run
+        self.varA = IntVar()
+        self.varB = IntVar()
+        self.varC = IntVar()
+        cA = Checkbutton(descriptioncanvas1,variable=self.varA, onvalue=1, offvalue=0)
+        cA.grid(row=4,column=1)
+        cB = Checkbutton(descriptioncanvas1,variable=self.varB, onvalue=1, offvalue=0)
+        cB.grid(row=4,column=2)
+        cC = Checkbutton(descriptioncanvas1,variable=self.varC, onvalue=1, offvalue=0)
+        cC.grid(row=4,column=3)
+        #To define the nominal value
+        Label(descriptioncanvas1, text='Value of Pbat2ac,nom',width=20).grid(row=3,column=5)
+        self.P_nom = Entry(descriptioncanvas1,width=7)
+        self.P_nom.insert(END, '50')
+        self.P_nom.grid(row=4,column=5)
+
         ##Add widget on the Batterie test Frame
         # Result table29
         # Label(self.resultcanvas1, text='',width=20, relief='ridge',bg='dark grey').grid(columnspan=2,rowspan=2,row=1,column=0)
@@ -1061,7 +1078,7 @@ class GuiPlus(Gui):
         #         # E.start()
         #         Label(self.resultcanvas1, text='oui',width=4, relief='ridge').grid(row=i+3,column=j+2)
         #     after(1000,None)
-        main(0) #Argument=1 d=for test batterie with ScheduleA
+        main(self.varA,self.varB,self.varC,int(self.P_nom.get())) #Argument are choosen with checkbutton
         
     def stopTestingBatterie(self):
         # inout.stopTestingBatterie()
