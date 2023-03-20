@@ -1,6 +1,9 @@
 import pprint
 import time
 
+import pandas as pd 
+import numpy as np
+
 from Control.SchedPacks.ScheduleA import schedule_A
 from Control.SchedPacks.ScheduleA import schedule_B
 from Control.SchedPacks.ScheduleA import schedule_C
@@ -235,7 +238,7 @@ def main(ArgumentA,ArgumentB,ArgumentC,P):
     Argument_A = ArgumentA.get()
     Argument_B = ArgumentB.get()
     Argument_C = ArgumentC.get()
-    print("P=",2*P)
+
     # we defined the schedule table accordingly to witch test we want to proceed
     sched_table = {}
     if Argument_A==1 and Argument_B==0 and Argument_C==0:
@@ -270,6 +273,9 @@ def main(ArgumentA,ArgumentB,ArgumentC,P):
         
     E_bat = 0
     n=0
+    Tkmin1 = 0
+    # results = np.asarray([['Time','Idx','Soc','E_bat','P']])
+    results = np.zeros([1,5])
 
     while True:
         ## Read inputs and show
@@ -291,22 +297,40 @@ def main(ArgumentA,ArgumentB,ArgumentC,P):
             # pprint.pprint(setpoints)
             # pprint.pprint(inner_states)
 
+            #Use Tkmin1 to calculate dt
+            if inner_states['schedTimestamp'] == None:
+                Tkmin1=0
+
             #calculate the new value
             if inner_states['schedTimestamp'] != None:
-                T = abs(time.time() - inner_states['schedTimestamp'])
-                n+=1
-                dt = T/n
+                Tkplus1 = abs(time.time() - inner_states['schedTimestamp'])
+                dt = Tkplus1-Tkmin1
+                Tkmin1 = Tkplus1
                 E_bat += P*setpoints['P_Setpoint_Internal']*dt/3600
                 inner_states['SOC'] = E_bat/5 
 
-          
+                #add value to results array
+                row = []
+                row.append(Tkplus1)
+                row.append(inner_states['schedIdx'])
+                row.append(inner_states['SOC'])
+                row.append(E_bat)
+                row.append(setpoints['P_Setpoint_Internal'])
+                results = np.vstack([results,row])
+                # print(results)
+
+            # if n>3:
+            #     np.savetxt('RESULTS.csv', results, fmt="%s", delimiter=",")
+            #     print("see csv")
+            # else:
+            #     n+=1
+        
         else:
+            np.savetxt('RESULTS.csv', results,fmt="%s", delimiter=",")
             print("End: the schedule has been completed")
             break #we have done all the schedule
 
         time.sleep(5)
-        break
-        
         
 
 if __name__ == '__main__':

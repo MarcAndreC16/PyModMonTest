@@ -10,6 +10,7 @@ Created on Fry May  15 16:25:00 2020
 
 import pprint
 import time
+import numpy as np
 
 
 def ProcessSchedule(scheduleTable, client, input_states, inner_states):
@@ -128,7 +129,13 @@ def ProcessSchedule(scheduleTable, client, input_states, inner_states):
                 # Execute the function
         
         return(func())
-   
+    
+    def performance(data_useful_to_that):
+        table_n29 = np.zeros(12,13)
+        # table_n29 = ...
+
+        return table_n29
+
     try:
         # schedIdx loop
         exitcode=1
