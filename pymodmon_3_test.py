@@ -1015,7 +1015,7 @@ class GuiPlus(Gui):
         #To define the nominal value
         Label(descriptioncanvas1, text='Value of Pbat2ac,nom',width=20).grid(row=3,column=5)
         self.P_nom = Entry(descriptioncanvas1,width=7)
-        self.P_nom.insert(END, '50')
+        self.P_nom.insert(END, '5') #defaut nominale value 5kW
         self.P_nom.grid(row=4,column=5)
 
         ##Add widget on the Batterie test Frame
