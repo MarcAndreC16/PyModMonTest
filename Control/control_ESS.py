@@ -30,8 +30,9 @@ import json
 #Battery Schedules
 #https://stackoverflow.com/questions/1057431/how-to-load-all-modules-in-a-folder/20753073#20753073
 #from SchedPacks.scheduleA import schedule_A, schedule_B
-from SchedPacks.scheds.scheduleA import schedule_A, schedule_B
-from SchedPacks.RunSchedule import RunSchedule
+from Control.SchedPacks.ScheduleA import schedule_A
+from Control.SchedPacks.ScheduleB import schedule_B
+from Control.SchedPacks.RunSchedule import RunSchedule
 
 def read_input_states(client):
     """Parse non-dummy values from client as dictionary."""
