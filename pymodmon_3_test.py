@@ -88,14 +88,17 @@ except ImportError:
 import atexit
 
 ## enable timed execution of the data polling
+import threading
 from threading import Timer
 import time
 
 ## enable file access
 import os
+import sys
 
 ## enable matricial calcule
 import numpy as np
+from statistics import mean
 
 ##
 from Control.SchedPacks.RunSchedule2 import *
@@ -929,21 +932,21 @@ class GuiPlus(Gui):
         # self.frameBatterieTestButton.configure(text='View Batterie Test',bg='lightgreen')
         # self.frameTargetDataSelectButton.configure(text='View Target Data',bg='light grey')
         # self.selectViewTest()
-        slave = Toplevel()
+        self.slave = Toplevel()
         
         ## create Menu of the test monitor
-        menubar1 = Menu(slave)
+        menubar1 = Menu(self.slave)
         filemenu1 = Menu(menubar1, tearoff=0)
         filemenu1.add_command(label='Save Result',command='') # create function to save result of the test 
         # filemenu1.add_command(label='Exit',command=self.closeWindow) create a new function to close only the test monitor (before closing verify that no test are running)
         
         menubar1.add_cascade(label='File', menu=filemenu1)
-        slave.config(menu=menubar1)
+        self.slave.config(menu=menubar1)
         
         ## configure second window for test monotoring
-        slave.title('Python Modbus Test Monitor')
-        slave.minsize(width=600, height=650)
-        notebook = ttk.Notebook(slave) # to have all result in one window
+        self.slave.title('Python Modbus Test Monitor')
+        self.slave.minsize(width=600, height=650)
+        notebook = ttk.Notebook(self.slave) # to have all result in one window
         notebook.pack(pady=10,fill='both',expand=True)
         self.slaveframe1 = ttk.Frame(notebook)
         slaveframe2 = ttk.Frame(notebook)
@@ -969,8 +972,12 @@ class GuiPlus(Gui):
         self.resultcanvas1.pack(side='top',expand=False,fill='both')
 
         # add the button to start test
-        self.BatterieTestButton = Button(settingscanvas1,text='▶ Start Batterie Test',bg='lightblue',command= self.startTestingBatterie)
-        self.BatterieTestButton.pack()
+        self.BatterieTestButton = Button(settingscanvas1,text='▶ Start Batterie Test',bg='lightblue',command= self.handle_TestingBatterie)
+        self.BatterieTestButton.pack(side = LEFT)
+
+        # add the button to clear table
+        self.ClearTableButton = Button(settingscanvas1,text='Clear Table',command= self.clear_table)
+        self.ClearTableButton.pack(side = LEFT)
 
         ##Add widget on the config test Frame
         # config table27
@@ -1066,26 +1073,292 @@ class GuiPlus(Gui):
     
     # def display(self,texte,line,col):
     #     Label(self.resultcanvas1, text=texte,width=4, relief='ridge').grid(row=line+3,column=col+2)
+    
+    def handle_TestingBatterie(self):
+        "create an instance of a stopable thread to handle batterie test in parralel"
+        print("in handle")
+        self.batterieTestThread = StoppableThread(self.resultcanvas1, self.varA.get(), self.varB.get(), self.varC.get(), int(self.P_nom.get()))
+        self.batterieTestThread.start()
+        # self.batterieTestThread.startTestingBatterie()
+        self.BatterieTestButton.configure(text='⏹ Stop Testing Batterie',bg='red', command=(self.batterieTestThread.stop))
+        self.monitor(self.batterieTestThread)
 
-    def startTestingBatterie(self):
-        self.BatterieTestButton.configure(text='⏹ Stop Testing Batterie',bg='red', command=(self.stopTestingBatterie))
-        # # try to do dynamic display
-        # results = np.zeros((12,13))
-        # [nline,ncolumn] = np.shape(results)
-        # for j in range(ncolumn):
-        #     for i in range(nline):
-        #         # E = Timer(1,lambda: self.display('oui',i,j))
-        #         # E.start()
-        #         Label(self.resultcanvas1, text='oui',width=4, relief='ridge').grid(row=i+3,column=j+2)
-        #     after(1000,None)
-        main(self.varA,self.varB,self.varC,int(self.P_nom.get())) #Argument are choosen with checkbutton
-        
+    def monitor(self, thread_to_monitor):
+        """Monitor the thread_to_monitor"""
+        if thread_to_monitor.is_alive():
+            # print("still alive")
+            self.slave.after(1000, lambda: self.monitor(thread_to_monitor))
+        else:
+            self.batterieTestThread.join()
+            print('the thread has ended')
+            self.BatterieTestButton.configure(text='▶ Start Testing Batterie',bg='lightblue', command=(self.handle_TestingBatterie))
+
     def stopTestingBatterie(self):
         # inout.stopTestingBatterie()
-        self.BatterieTestButton.configure(text='▶ Start Testing Batterie',bg='lightblue', command=(self.startTestingBatterie))
+        self.BatterieTestButton.configure(text='▶ Start Testing Batterie',bg='lightblue', command=(self.handle_TestingBatterie))
+
+    def clear_table(self):
+        "clear the result table "
+        # self.resultcanvas1.foerget()
+        for widget in self.resultcanvas1.winfo_children():
+            widget.destroy()
+
+
+        #rewrite the legend
+        self.resultcanvas1.pack(side='top',expand=False,fill='both')
+        # Result table29
+        # Label(self.resultcanvas1, text='',width=20, relief='ridge',bg='dark grey').grid(columnspan=2,rowspan=2,row=1,column=0)
+        Label(self.resultcanvas1, text='Cycle',width=43, relief='ridge',bg='dark grey').grid(columnspan=9,row=1,column=2)
+        Label(self.resultcanvas1, text='Mean Value',width=19, relief='ridge',bg='dark grey').grid(columnspan=4,row=1,column=11)
+
+        Label(self.resultcanvas1, text='1.1',width=4, relief='ridge',bg='dark grey').grid(row=2,column=2)
+        Label(self.resultcanvas1, text='1.2',width=4, relief='ridge',bg='dark grey').grid(row=2,column=3)
+        Label(self.resultcanvas1, text='1.3',width=4, relief='ridge',bg='dark grey').grid(row=2,column=4)
+        Label(self.resultcanvas1, text='2.1',width=4, relief='ridge',bg='dark grey').grid(row=2,column=5)
+        Label(self.resultcanvas1, text='2.2',width=4, relief='ridge',bg='dark grey').grid(row=2,column=6)
+        Label(self.resultcanvas1, text='2.3',width=4, relief='ridge',bg='dark grey').grid(row=2,column=7)
+        Label(self.resultcanvas1, text='3.1',width=4, relief='ridge',bg='dark grey').grid(row=2,column=8)
+        Label(self.resultcanvas1, text='3.2',width=4, relief='ridge',bg='dark grey').grid(row=2,column=9)
+        Label(self.resultcanvas1, text='3.3',width=4, relief='ridge',bg='dark grey').grid(row=2,column=10)
+        Label(self.resultcanvas1, text='1  ',width=4, relief='ridge',bg='dark grey').grid(row=2,column=11)
+        Label(self.resultcanvas1, text='2  ',width=4, relief='ridge',bg='dark grey').grid(row=2,column=12)
+        Label(self.resultcanvas1, text='3  ',width=4, relief='ridge',bg='dark grey').grid(row=2,column=13)
+        Label(self.resultcanvas1, text='1-3',width=4, relief='ridge',bg='dark grey').grid(row=2,column=14)
+
+        Label(self.resultcanvas1, text=u'\u03b7 BAT,RTE',width=18, relief='ridge',bg='dark grey').grid(row=3,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'\u03b7 BAT,RTE (Coulomb)',width=18, relief='ridge',bg='dark grey').grid(row=4,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'P\u0305 BAT (Charge)',width=18, relief='ridge',bg='dark grey').grid(row=5,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'P\u0305 BAT (Discharge)',width=18, relief='ridge',bg='dark grey').grid(row=6,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u't(Charge)',width=18, relief='ridge',bg='dark grey').grid(row=7,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u't(Discharge)',width=18, relief='ridge',bg='dark grey').grid(row=8,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'E BAT (Charge)',width=18, relief='ridge',bg='dark grey').grid(row=9,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'E BAT (Discharge)',width=18, relief='ridge',bg='dark grey').grid(row=10,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'C BAT (Charge)',width=18, relief='ridge',bg='dark grey').grid(row=11,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'C BAT (Discharge)',width=18, relief='ridge',bg='dark grey').grid(row=12,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'max(U BAT)',width=18, relief='ridge',bg='dark grey').grid(row=13,column=0,sticky='w')
+        Label(self.resultcanvas1, text=u'min(U BAT)',width=18, relief='ridge',bg='dark grey').grid(row=14,column=0,sticky='w')
+
+        Label(self.resultcanvas1, text='%',width=3, relief='ridge',bg='dark grey').grid(row=3,column=1)
+        Label(self.resultcanvas1, text='%',width=3, relief='ridge',bg='dark grey').grid(row=4,column=1)
+        Label(self.resultcanvas1, text='W',width=3, relief='ridge',bg='dark grey').grid(row=5,column=1)
+        Label(self.resultcanvas1, text='W',width=3, relief='ridge',bg='dark grey').grid(row=6,column=1)
+        Label(self.resultcanvas1, text='s',width=3, relief='ridge',bg='dark grey').grid(row=7,column=1)
+        Label(self.resultcanvas1, text='s',width=3, relief='ridge',bg='dark grey').grid(row=8,column=1)
+        Label(self.resultcanvas1, text='Wh',width=3, relief='ridge',bg='dark grey').grid(row=9,column=1)
+        Label(self.resultcanvas1, text='Wh',width=3, relief='ridge',bg='dark grey').grid(row=10,column=1)
+        Label(self.resultcanvas1, text='Ah',width=3, relief='ridge',bg='dark grey').grid(row=11,column=1)
+        Label(self.resultcanvas1, text='Ah',width=3, relief='ridge',bg='dark grey').grid(row=12,column=1)
+        Label(self.resultcanvas1, text='V',width=3, relief='ridge',bg='dark grey').grid(row=13,column=1)
+        Label(self.resultcanvas1, text='V',width=3, relief='ridge',bg='dark grey').grid(row=14,column=1)
 
 class InoutPlus(Inout):
     pass
+
+class StoppableThread(threading.Thread):
+    """Thread class with a stop() method. The thread itself has to check
+    regularly for the stopped() condition."""
+
+    def __init__(self, resultcanvas, A, B, C, P):
+        super().__init__()
+        self._stop_event = threading.Event()
+        self.resultcanvas = resultcanvas
+        self.varA = A
+        self.varB = B
+        self.varC = C
+        self.varP = P
+
+    def run(self):
+        """
+        Launching the desired programm of test (and will do modbus connection) 
+        Parameters:
+            Argument: type of test we want to do (to redefined)
+        Returns:
+            None
+        """
+        Argument_A = self.varA
+        Argument_B = self.varB
+        Argument_C = self.varC
+        pprint.pprint(self.varA)
+        # we defined the schedule table accordingly to witch test we want to proceed
+        sched_table = {}
+        if Argument_A==1 and Argument_B==0 and Argument_C==0:
+            sched_table[1] = schedule_A() 
+        elif Argument_A==0 and Argument_B==1 and Argument_C==0:
+            sched_table[1] = schedule_B()
+        elif Argument_A==0 and Argument_B==0 and Argument_C==1:
+            sched_table[1] = schedule_C()
+        elif Argument_A==1 and Argument_B==1 and Argument_C==0:
+            sched_table[1] = schedule_A()
+            sched_table[2] = schedule_B()
+        elif Argument_A==1 and Argument_B==0 and Argument_C==1:
+            sched_table[1] = schedule_A()
+            sched_table[2] = schedule_C()
+        elif Argument_A==0 and Argument_B==1 and Argument_C==1:
+            sched_table[1] = schedule_B()
+            sched_table[2] = schedule_C()
+        else:
+            sched_table[1] = schedule_A()
+            sched_table[2] = schedule_B()
+            sched_table[3] = schedule_C()
+            
+        pprint.pprint(sched_table)
+
+
+        inner_states={'sched_table_no':None,
+                'schedIdx':None,
+                'schedTimestamp':None,
+                'entryAction':None,
+                'SOC':None
+            }
+            
+        E_bat = 0
+        n=0
+        Tkmin1 = 0
+        # results = np.asarray([['Time','Idx','Soc','E_bat','P']])
+        results = np.zeros([1,5])
+
+        # manage cycle
+        previous_sched_table_no = None
+        previous_entryAction = None
+        previous_schedTimestanp = None
+        iteration_in_cycle = 0 # to differenciate 1.1 from 1.2
+        cycle_done = 0 
+        # list of results
+        L_TOD =[]
+        L_TOC = []
+        L_mean_TOD = []
+        L_mean_TOC = []
+
+        while not self.stopped():
+            # print("thread running")
+            # # try to do dynamic display
+            # results = np.zeros((12,13))
+            # [nline,ncolumn] = np.shape(results)
+            # for j in range(ncolumn):
+            #     for i in range(nline):
+            #         # E = Timer(1,lambda: self.display('oui',i,j))
+            #         # E.start()
+            #         Label(self.resultcanvas1, text='oui',width=4, relief='ridge').grid(row=i+3,column=j+2)
+            #     after(1000,None)
+                ## Read inputs and show
+            # input_states = read_input_states(client) => first we don't use modbus so we'll start with default input state defined arbitrary
+            input_states = {
+                "SOC_Online": 0, #completly decharge
+            }
+            # pprint.pprint(input_states)
+
+            # we don't use modbus so we simulate change of soc
+            if inner_states['sched_table_no'] != None:
+                input_states["SOC_Online"] = inner_states['SOC']
+            
+            # Scheduler: Calculate output (not in this part =>and prepare writing modbus register)
+            if inner_states['sched_table_no'] != 0:
+                # exitcode, inner_states, setpoints = RunSchedule(client, input_states, sched_table, inner_states) 
+                value_time_before_schedIx_change = time.time()
+                value_schedIdx_before_execution = inner_states['schedIdx']
+                exitcode, inner_states, setpoints = RunSchedule(input_states, sched_table, inner_states) #no modbus yet
+
+                if inner_states['entryAction'] != previous_entryAction:
+                    if previous_entryAction == 3: # we end a discharge 
+                        TOD= abs(time.time() - previous_schedTimestanp) # Time of discharge
+                        L_TOD.append(TOD)
+                        Label(self.resultcanvas, text=str(round(TOD,1)),width=4, relief='ridge').grid(row=8,column=3*cycle_done+iteration_in_cycle+2)
+                        # calculate and display other results here
+
+
+                    if previous_entryAction == 2: # we end a charge 
+                        TOC= abs(time.time() - previous_schedTimestanp) # time of charge
+                        L_TOC.append(TOC)
+                        Label(self.resultcanvas, text=str(round(TOC,1)),width=4, relief='ridge').grid(row=7,column=3*cycle_done+iteration_in_cycle+2)
+                        # calculate and display other results here
+                        iteration_in_cycle +=1
+                    # we store value
+                    if iteration_in_cycle ==3:
+                        # we made a complete cycle so we calculte mean value
+                        mean_TOC = mean(L_TOC[cycle_done*3 : cycle_done*3 + 3 ])
+                        Label(self.resultcanvas, text=str(round(mean_TOC,1)),width=4, relief='ridge').grid(row=7,column=cycle_done+11)
+                        mean_TOD = mean(L_TOD[cycle_done*3 : cycle_done*3 + 3 ])
+                        Label(self.resultcanvas, text=str(round(mean_TOD,1)),width=4, relief='ridge').grid(row=8,column=cycle_done+11)
+                        cycle_done +=1
+                        iteration_in_cycle=0
+                    if cycle_done==3:
+                        # we end the 3 cycles so we calculate the mean value of the cycles
+                        mean_all_TOC = mean(L_TOC)
+                        mean_all_TOD = mean(L_TOD)
+                        Label(self.resultcanvas, text=str(round(mean_all_TOC,1)),width=4, relief='ridge').grid(row=7,column=14)
+                        Label(self.resultcanvas, text=str(round(mean_all_TOD,1)),width=4, relief='ridge').grid(row=8,column=14)
+
+                    previous_schedTimestanp = inner_states['schedTimestamp']
+                    pprint.pprint("je suis la")
+                previous_entryAction = inner_states['entryAction']
+                pprint.pprint(previous_entryAction)
+
+                #if inner_states['sched_table_no'] != previous_sched_table_no: # change table so one cycle is done=> calculate mean value
+                #if inner_states['schedIdx'] =! value_schedIdx_before_execution:
+                # pprint.pprint(setpoints)
+                # pprint.pprint(inner_states)
+
+                #Use Tkmin1 to calculate dt
+                if inner_states['schedTimestamp'] == None:
+                    Tkmin1=0
+
+                #calculate the new value
+                if inner_states['schedTimestamp'] != None:
+                    Tkplus1 = abs(time.time() - inner_states['schedTimestamp'])
+                    dt = Tkplus1-Tkmin1
+                    Tkmin1 = Tkplus1
+                    E_bat += self.varP*setpoints['P_Setpoint_Internal']*dt/3600
+                    inner_states['SOC'] = E_bat/5 
+
+                    #add value to results array
+                    row = []
+                    row.append(Tkplus1)
+                    row.append(inner_states['schedIdx'])
+                    row.append(inner_states['SOC'])
+                    row.append(E_bat)
+                    row.append(setpoints['P_Setpoint_Internal'])
+                    results = np.vstack([results,row])
+                    # print(results)
+
+                # esssayer  de trouver le bon temps de charge
+                # if inner_states['entryAction'] != None:
+
+                # if n>3:
+                #     np.savetxt('RESULTS.csv', results, fmt="%s", delimiter=",")
+                #     print("see csv")
+                # else:
+                #     n+=1
+            
+            else:
+                np.savetxt('RESULTS.csv', results,fmt="%s", delimiter=",")
+                print("End: the schedule has been completed")
+                break #we have done all the schedule
+
+            time.sleep(5)
+           
+        
+
+    # def run(self):
+    #     while not self.stopped():
+    #         print("thread running")
+    #         # time.sleep(1)
+    #         # try to do dynamic display
+    #         results = np.zeros((12,13))
+    #         [nline,ncolumn] = np.shape(results)
+    #         for j in range(ncolumn):
+    #             for i in range(nline):
+    #                 # E = Timer(1,lambda: self.display('oui',i,j))
+    #                 # E.start()
+    #                 Label(self.resultcanvas1, text='oui',width=4, relief='ridge').grid(row=i+3,column=j+2)
+    #                 time.sleep(1)
+
+    def stop(self):
+        self._stop_event.set()
+        print("tried to stop the thread")
+        # sys.exit()
+
+    def stopped(self):
+        return self._stop_event.is_set()
 
 ## create a data object
 data = DataPlus()
