@@ -33,12 +33,13 @@ def ProcessSchedule(scheduleTable, input_states, inner_states): #we first don't 
             entry['Action']=2
             res=state(entry['Action'])
         
-        elif (SOC > entry['maxSOC']):
-            #entry['Action'] = 3 # discharge        
-            #print('Discharge Battery (Action=3)')
-            entry['Action']=3
-            res=state(entry['Action'])
-        else:
+        # elif (SOC > entry['maxSOC']):
+        #     #entry['Action'] = 3 # discharge        
+        #     #print('Discharge Battery (Action=3)')
+        #     entry['Action']=3
+        #     res=state(entry['Action'])
+
+        else: #we can suppose maxSOC=100%
             #entry['Action'] = 4 # target reached --> set standby values and go to next table entry
             #print('Table entry {} finished (Action=4)'.format(schedIdx))
             entry['Action']=4
